@@ -50,9 +50,10 @@ import 'theme.dart';
 ///
 /// ```dart
 ///  Widget build(BuildContext context) {
-///    final TextStyle textStyle = Theme.of(context).textTheme.bodyText2!;
+///    final ThemeData theme = Theme.of(context);
+///    final TextStyle textStyle = theme.textTheme.bodyText2!;
 ///    final List<Widget> aboutBoxChildren = <Widget>[
-///      SizedBox(height: 24),
+///      const SizedBox(height: 24),
 ///      RichText(
 ///        text: TextSpan(
 ///          children: <TextSpan>[
@@ -63,7 +64,7 @@ import 'theme.dart';
 ///              'from a single codebase. Learn more about Flutter at '
 ///            ),
 ///            TextSpan(
-///              style: textStyle.copyWith(color: Theme.of(context).accentColor),
+///              style: textStyle.copyWith(color: theme.colorScheme.primary),
 ///              text: 'https://flutter.dev'
 ///            ),
 ///            TextSpan(
@@ -77,14 +78,14 @@ import 'theme.dart';
 ///
 ///    return Scaffold(
 ///      appBar: AppBar(
-///        title: Text('Show About Example'),
+///        title: const Text('Show About Example'),
 ///      ),
 ///      drawer: Drawer(
 ///        child: SingleChildScrollView(
 ///          child: SafeArea(
 ///            child: AboutListTile(
-///              icon: Icon(Icons.info),
-///              applicationIcon: FlutterLogo(),
+///              icon: const Icon(Icons.info),
+///              applicationIcon: const FlutterLogo(),
 ///              applicationName: 'Show About Example',
 ///              applicationVersion: 'August 2019',
 ///              applicationLegalese: '\u{a9} 2014 The Flutter Authors',
@@ -95,11 +96,11 @@ import 'theme.dart';
 ///      ),
 ///      body: Center(
 ///        child: ElevatedButton(
-///          child: Text('Show About Example'),
+///          child: const Text('Show About Example'),
 ///          onPressed: () {
 ///            showAboutDialog(
 ///              context: context,
-///              applicationIcon: FlutterLogo(),
+///              applicationIcon: const FlutterLogo(),
 ///              applicationName: 'Show About Example',
 ///              applicationVersion: 'August 2019',
 ///              applicationLegalese: '\u{a9} 2014 The Flutter Authors',
@@ -231,8 +232,9 @@ class AboutListTile extends StatelessWidget {
 /// The licenses shown on the [LicensePage] are those returned by the
 /// [LicenseRegistry] API, which can be used to add more licenses to the list.
 ///
-/// The [context], [useRootNavigator] and [routeSettings] arguments are passed to
-/// [showDialog], the documentation for which discusses how it is used.
+/// The [context], [useRootNavigator], [routeSettings] and [anchorPoint]
+/// arguments are passed to [showDialog], the documentation for which discusses
+/// how it is used.
 void showAboutDialog({
   required BuildContext context,
   String? applicationName,
@@ -242,6 +244,7 @@ void showAboutDialog({
   List<Widget>? children,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
+  Offset? anchorPoint,
 }) {
   assert(context != null);
   assert(useRootNavigator != null);
@@ -258,6 +261,7 @@ void showAboutDialog({
       );
     },
     routeSettings: routeSettings,
+    anchorPoint: anchorPoint,
   );
 }
 

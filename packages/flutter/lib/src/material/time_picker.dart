@@ -159,7 +159,7 @@ class _TimePickerHeader extends StatelessWidget {
         controls = Column(
           children: <Widget>[
             const SizedBox(height: 16.0),
-            Container(
+            SizedBox(
               height: kMinInteractiveDimension * 2,
               child: Row(
                 children: <Widget>[
@@ -209,7 +209,7 @@ class _TimePickerHeader extends StatelessWidget {
                   orientation: orientation,
                   onChanged: onChanged,
                 ),
-              Container(
+              SizedBox(
                 height: kMinInteractiveDimension * 2,
                 child: Row(
                   // Hour/minutes should not change positions in RTL locales.
@@ -287,7 +287,7 @@ class _HourMinuteControl extends StatelessWidget {
     final ShapeBorder shape = timePickerTheme.hourMinuteShape ?? _kDefaultShape;
 
     final Set<MaterialState> states = isSelected ? <MaterialState>{MaterialState.selected} : <MaterialState>{};
-    return Container(
+    return SizedBox(
       height: _kTimePickerHeaderControlHeight,
       child: Material(
         color: MaterialStateProperty.resolveAs(backgroundColor, states),
@@ -610,7 +610,7 @@ class _DayPeriodControl extends StatelessWidget {
         result = _DayPeriodInputPadding(
           minSize: const Size(width, kMinInteractiveDimension * 2),
           orientation: orientation,
-          child: Container(
+          child: SizedBox(
             width: width,
             height: _kTimePickerHeaderControlHeight,
             child: Material(
@@ -637,7 +637,7 @@ class _DayPeriodControl extends StatelessWidget {
         result = _DayPeriodInputPadding(
           minSize: const Size(0.0, kMinInteractiveDimension),
           orientation: orientation,
-          child: Container(
+          child: SizedBox(
             height: 40.0,
             child: Material(
               clipBehavior: Clip.antiAlias,
@@ -2147,6 +2147,9 @@ class _TimePickerDialogState extends State<_TimePickerDialog> {
 /// Optional strings for the [helpText], [cancelText], and [confirmText] can be
 /// provided to override the default values.
 ///
+/// The [anchorPoint] argument is used to pick the closest area without
+/// [DisplayFeature]s, where the dialog will be rendered.
+///
 /// By default, the time picker gets its colors from the overall theme's
 /// [ColorScheme]. The time picker can be further customized by providing a
 /// [TimePickerThemeData] to the overall theme.
@@ -2174,7 +2177,7 @@ class _TimePickerDialogState extends State<_TimePickerDialog> {
 /// ```dart
 /// Future<TimeOfDay?> selectedTime24Hour = showTimePicker(
 ///   context: context,
-///   initialTime: TimeOfDay(hour: 10, minute: 47),
+///   initialTime: const TimeOfDay(hour: 10, minute: 47),
 ///   builder: (BuildContext context, Widget? child) {
 ///     return MediaQuery(
 ///       data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
@@ -2191,6 +2194,8 @@ class _TimePickerDialogState extends State<_TimePickerDialog> {
 ///    date picker.
 ///  * [TimePickerThemeData], which allows you to customize the colors,
 ///    typography, and shape of the time picker.
+///  * [AvoidDisplayFeatures], which is used for avoiding [DisplayFeature]s when
+///    displaying the picker.
 Future<TimeOfDay?> showTimePicker({
   required BuildContext context,
   required TimeOfDay initialTime,
@@ -2201,6 +2206,7 @@ Future<TimeOfDay?> showTimePicker({
   String? confirmText,
   String? helpText,
   RouteSettings? routeSettings,
+  Offset? anchorPoint,
 }) async {
   assert(context != null);
   assert(initialTime != null);
@@ -2215,13 +2221,14 @@ Future<TimeOfDay?> showTimePicker({
     confirmText: confirmText,
     helpText: helpText,
   );
-  return await showDialog<TimeOfDay>(
+  return showDialog<TimeOfDay>(
     context: context,
     useRootNavigator: useRootNavigator,
     builder: (BuildContext context) {
       return builder == null ? dialog : builder(context, dialog);
     },
     routeSettings: routeSettings,
+    anchorPoint: anchorPoint,
   );
 }
 

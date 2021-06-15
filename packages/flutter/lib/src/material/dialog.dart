@@ -194,10 +194,10 @@ class Dialog extends StatelessWidget {
 ///     barrierDismissible: false, // user must tap button!
 ///     builder: (BuildContext context) {
 ///       return AlertDialog(
-///         title: Text('AlertDialog Title'),
+///         title: const Text('AlertDialog Title'),
 ///         content: SingleChildScrollView(
 ///           child: ListBody(
-///             children: <Widget>[
+///             children: const <Widget>[
 ///               Text('This is a demo alert dialog.'),
 ///               Text('Would you like to approve of this message?'),
 ///             ],
@@ -205,7 +205,7 @@ class Dialog extends StatelessWidget {
 ///         ),
 ///         actions: <Widget>[
 ///           TextButton(
-///             child: Text('Approve'),
+///             child: const Text('Approve'),
 ///             onPressed: () {
 ///               Navigator.of(context).pop();
 ///             },
@@ -232,7 +232,7 @@ class Dialog extends StatelessWidget {
 ///       builder: (BuildContext context) => AlertDialog(
 ///         title: const Text('AlertDialog Tilte'),
 ///         content: const Text('AlertDialog description'),
-///         actions: [
+///         actions: <Widget>[
 ///           TextButton(
 ///             onPressed: () => Navigator.pop(context, 'Cancel'),
 ///             child: const Text('Cancel'),
@@ -244,7 +244,7 @@ class Dialog extends StatelessWidget {
 ///         ],
 ///       ),
 ///     ),
-///     child: Text('Show Dialog'),
+///     child: const Text('Show Dialog'),
 ///   );
 /// }
 ///
@@ -367,13 +367,13 @@ class AlertDialog extends StatelessWidget {
   /// This is an example of a set of actions aligned with the content widget.
   /// ```dart
   /// AlertDialog(
-  ///   title: Text('Title'),
+  ///   title: const Text('Title'),
   ///   content: Container(width: 200, height: 200, color: Colors.green),
   ///   actions: <Widget>[
-  ///     ElevatedButton(onPressed: () {}, child: Text('Button 1')),
-  ///     ElevatedButton(onPressed: () {}, child: Text('Button 2')),
+  ///     ElevatedButton(onPressed: () {}, child: const Text('Button 1')),
+  ///     ElevatedButton(onPressed: () {}, child: const Text('Button 2')),
   ///   ],
-  ///   actionsPadding: EdgeInsets.symmetric(horizontal: 8.0),
+  ///   actionsPadding: const EdgeInsets.symmetric(horizontal: 8.0),
   /// )
   /// ```
   /// {@end-tool}
@@ -979,6 +979,14 @@ Widget _buildMaterialDialogTransitions(BuildContext context, Animation<double> a
 /// The `routeSettings` argument is passed to [showGeneralDialog],
 /// see [RouteSettings] for details.
 ///
+/// The `screen` argument is used to determine which screen to use when showing
+/// this dialog on devices with multiple screens, e.g. a dual-screen device. If
+/// `screen` value exceeds the number of screens available, the last screen is
+/// used.
+///
+/// The [anchorPoint] argument is used to pick the closest area without
+/// [DisplayFeature]s, where the dialog will be rendered.
+///
 /// If the application has multiple [Navigator] objects, it may be necessary to
 /// call `Navigator.of(context, rootNavigator: true).pop(result)` to close the
 /// dialog rather than just `Navigator.pop(context, result)`.
@@ -1009,13 +1017,15 @@ Widget _buildMaterialDialogTransitions(BuildContext context, Animation<double> a
 ///
 /// ```dart
 /// void main() {
-///   runApp(MyApp());
+///   runApp(const MyApp());
 /// }
 ///
 /// class MyApp extends StatelessWidget {
+///   const MyApp({Key? key}) : super(key: key);
+///
 ///   @override
 ///   Widget build(BuildContext context) {
-///     return MaterialApp(
+///     return const MaterialApp(
 ///       restorationScopeId: 'app',
 ///       title: 'Restorable Routes Demo',
 ///       home: MyHomePage(),
@@ -1024,6 +1034,8 @@ Widget _buildMaterialDialogTransitions(BuildContext context, Animation<double> a
 /// }
 ///
 /// class MyHomePage extends StatelessWidget {
+///   const MyHomePage({Key? key}) : super(key: key);
+///
 ///   static Route<Object?> _dialogBuilder(BuildContext context, Object? arguments) {
 ///     return DialogRoute<void>(
 ///       context: context,
@@ -1057,6 +1069,8 @@ Widget _buildMaterialDialogTransitions(BuildContext context, Animation<double> a
 ///  * [Dialog], on which [SimpleDialog] and [AlertDialog] are based.
 ///  * [showCupertinoDialog], which displays an iOS-style dialog.
 ///  * [showGeneralDialog], which allows for customization of the dialog popup.
+///  * [AvoidDisplayFeatures], which is used for avoiding [DisplayFeature]s when
+///    displaying the dialog.
 ///  * <https://material.io/design/components/dialogs.html>
 Future<T?> showDialog<T>({
   required BuildContext context,
@@ -1067,6 +1081,7 @@ Future<T?> showDialog<T>({
   bool useSafeArea = true,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
+  Offset? anchorPoint,
 }) {
   assert(builder != null);
   assert(barrierDismissible != null);
@@ -1091,6 +1106,7 @@ Future<T?> showDialog<T>({
     useSafeArea: useSafeArea,
     settings: routeSettings,
     themes: themes,
+    anchorPoint: anchorPoint,
   ));
 }
 
@@ -1129,11 +1145,21 @@ Future<T?> showDialog<T>({
 /// The `settings` argument define the settings for this route. See
 /// [RouteSettings] for details.
 ///
+/// The `screen` argument is used to determine which screen to use when showing
+/// this dialog on devices with multiple screens, e.g. a dual-screen device. If
+/// `screen` value exceeds the number of screens available, the last screen is
+/// used.
+///
+/// The [anchorPoint] argument is used to pick the closest area without
+/// [DisplayFeature]s, where the dialog will be rendered.
+///
 /// See also:
 ///
 ///  * [showDialog], which is a way to display a DialogRoute.
 ///  * [showGeneralDialog], which allows for customization of the dialog popup.
 ///  * [showCupertinoDialog], which displays an iOS-style dialog.
+///  * [AvoidDisplayFeatures], which is used for avoiding [DisplayFeature]s when
+///    displaying the dialog.
 class DialogRoute<T> extends RawDialogRoute<T> {
   /// A dialog route with Material entrance and exit animations,
   /// modal barrier color, and modal barrier behavior (dialog is dismissible
@@ -1147,6 +1173,7 @@ class DialogRoute<T> extends RawDialogRoute<T> {
     String? barrierLabel,
     bool useSafeArea = true,
     RouteSettings? settings,
+    Offset? anchorPoint,
   }) : assert(barrierDismissible != null),
        super(
          pageBuilder: (BuildContext buildContext, Animation<double> animation, Animation<double> secondaryAnimation) {
@@ -1163,6 +1190,7 @@ class DialogRoute<T> extends RawDialogRoute<T> {
          transitionDuration: const Duration(milliseconds: 150),
          transitionBuilder: _buildMaterialDialogTransitions,
          settings: settings,
+         anchorPoint: anchorPoint,
        );
 }
 

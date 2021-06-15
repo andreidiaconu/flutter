@@ -5,15 +5,18 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'dart:ui' show DisplayFeature;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 import 'actions.dart';
 import 'basic.dart';
 import 'focus_manager.dart';
 import 'focus_scope.dart';
 import 'framework.dart';
+import 'media_query.dart';
 import 'modal_barrier.dart';
 import 'navigator.dart';
 import 'overlay.dart';
@@ -484,20 +487,22 @@ mixin LocalHistoryRoute<T> on Route<T> {
   ///
   /// ```dart
   /// class App extends StatelessWidget {
+  ///   const App({Key? key}) : super(key: key);
+  ///
   ///   @override
   ///   Widget build(BuildContext context) {
   ///     return MaterialApp(
   ///       initialRoute: '/',
-  ///       routes: {
-  ///         '/': (BuildContext context) => HomePage(),
-  ///         '/second_page': (BuildContext context) => SecondPage(),
+  ///       routes: <String, WidgetBuilder>{
+  ///         '/': (BuildContext context) => const HomePage(),
+  ///         '/second_page': (BuildContext context) => const SecondPage(),
   ///       },
   ///     );
   ///   }
   /// }
   ///
   /// class HomePage extends StatefulWidget {
-  ///   HomePage();
+  ///   const HomePage({Key? key}) : super(key: key);
   ///
   ///   @override
   ///   _HomePageState createState() => _HomePageState();
@@ -511,10 +516,10 @@ mixin LocalHistoryRoute<T> on Route<T> {
   ///         child: Column(
   ///           mainAxisSize: MainAxisSize.min,
   ///           children: <Widget>[
-  ///             Text('HomePage'),
+  ///             const Text('HomePage'),
   ///             // Press this button to open the SecondPage.
   ///             ElevatedButton(
-  ///               child: Text('Second Page >'),
+  ///               child: const Text('Second Page >'),
   ///               onPressed: () {
   ///                 Navigator.pushNamed(context, '/second_page');
   ///               },
@@ -527,6 +532,8 @@ mixin LocalHistoryRoute<T> on Route<T> {
   /// }
   ///
   /// class SecondPage extends StatefulWidget {
+  ///   const SecondPage({Key? key}) : super(key: key);
+  ///
   ///   @override
   ///   _SecondPageState createState() => _SecondPageState();
   /// }
@@ -535,7 +542,7 @@ mixin LocalHistoryRoute<T> on Route<T> {
   ///
   ///   bool _showRectangle = false;
   ///
-  ///   void _navigateLocallyToShowRectangle() async {
+  ///   Future<void> _navigateLocallyToShowRectangle() async {
   ///     // This local history entry essentially represents the display of the red
   ///     // rectangle. When this local history entry is removed, we hide the red
   ///     // rectangle.
@@ -552,14 +559,14 @@ mixin LocalHistoryRoute<T> on Route<T> {
   ///
   ///   @override
   ///   Widget build(BuildContext context) {
-  ///     final localNavContent = _showRectangle
+  ///     final Widget localNavContent = _showRectangle
   ///       ? Container(
   ///           width: 100.0,
   ///           height: 100.0,
   ///           color: Colors.red,
   ///         )
   ///       : ElevatedButton(
-  ///           child: Text('Show Rectangle'),
+  ///           child: const Text('Show Rectangle'),
   ///           onPressed: _navigateLocallyToShowRectangle,
   ///         );
   ///
@@ -570,7 +577,7 @@ mixin LocalHistoryRoute<T> on Route<T> {
   ///           children: <Widget>[
   ///             localNavContent,
   ///             ElevatedButton(
-  ///               child: Text('< Back'),
+  ///               child: const Text('< Back'),
   ///               onPressed: () {
   ///                 // Pop a route. If this is pressed while the red rectangle is
   ///                 // visible then it will will pop our local history entry, which
@@ -1357,7 +1364,7 @@ abstract class ModalRoute<T> extends TransitionRoute<T> with LocalHistoryRoute<T
       if (await callback() != true)
         return RoutePopDisposition.doNotPop;
     }
-    return await super.willPop();
+    return super.willPop();
   }
 
   /// Enables this route to veto attempts by the user to dismiss it.
@@ -1610,8 +1617,8 @@ abstract class PopupRoute<T> extends ModalRoute<T> {
 /// be given with their type arguments. Since the [Route] class and its
 /// subclasses have a type argument, this includes the arguments passed to this
 /// class. Consider using `dynamic` to specify the entire class of routes rather
-/// than only specific subtypes. For example, to watch for all [PageRoute]
-/// variants, the `RouteObserver<PageRoute<dynamic>>` type may be used.
+/// than only specific subtypes. For example, to watch for all [ModalRoute]
+/// variants, the `RouteObserver<ModalRoute<dynamic>>` type may be used.
 ///
 /// {@tool snippet}
 ///
@@ -1620,15 +1627,18 @@ abstract class PopupRoute<T> extends ModalRoute<T> {
 ///
 /// ```dart
 /// // Register the RouteObserver as a navigation observer.
-/// final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+/// final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 /// void main() {
 ///   runApp(MaterialApp(
 ///     home: Container(),
-///     navigatorObservers: [routeObserver],
+///     navigatorObservers: <RouteObserver<ModalRoute<void>>>[ routeObserver ],
 ///   ));
 /// }
 ///
 /// class RouteAwareWidget extends StatefulWidget {
+///   const RouteAwareWidget({Key? key}) : super(key: key);
+///
+///   @override
 ///   State<RouteAwareWidget> createState() => RouteAwareWidgetState();
 /// }
 ///
@@ -1638,7 +1648,7 @@ abstract class PopupRoute<T> extends ModalRoute<T> {
 ///   @override
 ///   void didChangeDependencies() {
 ///     super.didChangeDependencies();
-///     routeObserver.subscribe(this, ModalRoute.of(context));
+///     routeObserver.subscribe(this, ModalRoute.of(context)!);
 ///   }
 ///
 ///   @override
@@ -1769,6 +1779,9 @@ abstract class RouteAware {
 /// The `settings` argument define the settings for this route. See
 /// [RouteSettings] for details.
 ///
+/// The [anchorPoint] argument is used to pick the closest area without
+/// [DisplayFeature]s, where the dialog will be rendered.
+///
 /// See also:
 ///
 ///  * [showGeneralDialog], which is a way to display a RawDialogRoute.
@@ -1784,6 +1797,7 @@ class RawDialogRoute<T> extends PopupRoute<T> {
     Duration transitionDuration = const Duration(milliseconds: 200),
     RouteTransitionsBuilder? transitionBuilder,
     RouteSettings? settings,
+    Offset? anchorPoint,
   }) : assert(barrierDismissible != null),
        _pageBuilder = pageBuilder,
        _barrierDismissible = barrierDismissible,
@@ -1791,6 +1805,7 @@ class RawDialogRoute<T> extends PopupRoute<T> {
        _barrierColor = barrierColor,
        _transitionDuration = transitionDuration,
        _transitionBuilder = transitionBuilder,
+       _anchorPoint = anchorPoint,
        super(settings: settings);
 
   final RoutePageBuilder _pageBuilder;
@@ -1813,10 +1828,15 @@ class RawDialogRoute<T> extends PopupRoute<T> {
 
   final RouteTransitionsBuilder? _transitionBuilder;
 
+  final Offset? _anchorPoint;
+
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     return Semantics(
-      child: _pageBuilder(context, animation, secondaryAnimation),
+      child: AvoidDisplayFeatures(
+        child: _pageBuilder(context, animation, secondaryAnimation),
+        anchorPoint: _anchorPoint,
+      ),
       scopesRoute: true,
       explicitChildNodes: true,
     );
@@ -1835,6 +1855,136 @@ class RawDialogRoute<T> extends PopupRoute<T> {
     return _transitionBuilder!(context, animation, secondaryAnimation, child);
   }
 }
+
+/// Widget that can be added at the root of a popup route in order to make
+/// the contents avoid any [DisplayFeature] present on the device.
+///
+/// This widget first looks at the positioning of the [DisplayFeature]
+/// and determines where the safe areas are located, which do not overlap any
+/// of the display features. Then the [anchorPoint] paramenter is used to pick the
+/// closest area.
+///
+/// If no [anchorPoint] is provided, then [Directionality] is used to pick the
+/// first area from the top, so for a [TextDirection.ltr] layout, the area from
+/// the top-left is selected.
+///
+/// For example, a device with two screens and a display cutout for cameras on
+/// the left screen will have two safe areas:
+///
+///  * One safe area will be the left screen, excluding the camera cutout,
+///  similar to how [SafeArea] works.
+///  * One safe area will be the right screen.
+///
+/// See also:
+///
+///  * [showGeneralDialog], which is a way to display a RawDialogRoute.
+///  * [showDialog], which is a way to display a DialogRoute.
+///  * [showCupertinoDialog], which displays an iOS-style dialog.
+class AvoidDisplayFeatures extends StatelessWidget {
+  /// Creates a widget that positions its child so that it avoids display features.
+  const AvoidDisplayFeatures({
+    Key? key,
+    required this.child,
+    this.anchorPoint,
+  }) : super(key: key);
+
+  /// The child that will avoid the display features.
+  final Widget child;
+
+  /// The anchor point used to pick the closest area that has no display features.
+  /// `Offset(0,0)` is the top-left corner of the available screen space. For
+  /// a dual-screen device, this is the top-left corner of the left screen.
+  final Offset? anchorPoint;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Rect> safeAreas = _safeAreasInNavigator(context);
+    final Rect safeArea = anchorPoint == null
+        ? _firstSafeArea(safeAreas, context)
+        : _closestToAnchorPoint(safeAreas, anchorPoint!);
+
+    return Stack(
+      children: <Widget>[
+        Positioned.fromRect(rect: safeArea, child: child),
+      ],
+    );
+  }
+
+  Rect _firstSafeArea(List<Rect> safeAreas, BuildContext context) {
+    final TextDirection? direction = Directionality.maybeOf(context);
+    if (direction == null || direction == TextDirection.ltr)
+      return _closestToAnchorPoint(safeAreas, Offset.zero);
+    else
+      return _closestToAnchorPoint(safeAreas, const Offset(double.maxFinite, 0));
+  }
+
+  Rect _closestToAnchorPoint(List<Rect> safeAreas, Offset anchorPoint) {
+    return safeAreas.fold(safeAreas.first, (Rect previousValue, Rect element) {
+      final double previousDistance = (previousValue.center - anchorPoint).distanceSquared;
+      final double elementDistance = (element.center - anchorPoint).distanceSquared;
+      if (previousDistance < elementDistance)
+        return previousValue;
+      else
+        return element;
+    });
+  }
+
+  List<Rect> _safeAreasInNavigator(BuildContext context) {
+    final RenderObject? renderObject = Overlay.of(context)?.context.findRenderObject();
+    Rect? navigatorBounds;
+    final Vector3? translation = renderObject?.getTransformTo(null).getTranslation();
+    if (translation != null) {
+      navigatorBounds = renderObject?.paintBounds.shift(Offset(translation.x, translation.y));
+    }
+    List<Rect> avoidBounds;
+    if (navigatorBounds == null) {
+      final Size screenSize = MediaQuery.of(context).size;
+      navigatorBounds = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
+      avoidBounds = MediaQuery.of(context).displayFeatures
+          .map((DisplayFeature displayFeature) => displayFeature.bounds)
+          .toList();
+    } else {
+      avoidBounds = MediaQuery.of(context).displayFeatures
+          .where((DisplayFeature displayFeature) => displayFeature.bounds.overlaps(navigatorBounds!))
+          .map((DisplayFeature displayFeature) => displayFeature.bounds.shift(-navigatorBounds!.topLeft))
+          .toList();
+    }
+    return _safeAreas(Rect.fromLTWH(0, 0, navigatorBounds.width, navigatorBounds.height), avoidBounds);
+  }
+
+  List<Rect> _safeAreas(Rect screen, List<Rect> avoidBounds) {
+    Iterable<Rect> areas = <Rect>[screen];
+    for (final Rect bounds in avoidBounds) {
+      areas = areas.expand((Rect area) sync* {
+        if (area.top >= bounds.top
+            && area.bottom <= bounds.bottom) {
+          // Display feature splits the area vertically
+          if (area.left < bounds.left) {
+            // There is a smaller area, left of the display feature
+            yield Rect.fromLTWH(area.left, area.top, bounds.left - area.left, area.height);
+          }
+          if (area.right > bounds.right) {
+            // There is a smaller area, right of the display feature
+            yield Rect.fromLTWH(bounds.right, area.top, area.right - bounds.right, area.height);
+          }
+        } else if (area.left >= bounds.left
+            && area.right <= bounds.right) {
+          // Display feature splits the area horizontally
+          if (area.top < bounds.top) {
+            // There is a smaller area, above the display feature
+            yield Rect.fromLTWH(area.left, area.top, area.width, bounds.top - area.top);
+          }
+          if (area.bottom > bounds.bottom) {
+            // There is a smaller area, below the display feature
+            yield Rect.fromLTWH(area.left, bounds.bottom, area.width, area.bottom - bounds.bottom);
+          }
+        }
+      });
+    }
+    return areas.toList();
+  }
+}
+
 
 /// Displays a dialog above the current contents of the app.
 ///
@@ -1909,13 +2059,15 @@ class RawDialogRoute<T> extends PopupRoute<T> {
 ///
 /// ```dart
 /// void main() {
-///   runApp(MyApp());
+///   runApp(const MyApp());
 /// }
 ///
 /// class MyApp extends StatelessWidget {
+///   const MyApp({Key? key}) : super(key: key);
+///
 ///   @override
 ///   Widget build(BuildContext context) {
-///     return MaterialApp(
+///     return const MaterialApp(
 ///       restorationScopeId: 'app',
 ///       home: MyHomePage(),
 ///     );
@@ -1923,6 +2075,8 @@ class RawDialogRoute<T> extends PopupRoute<T> {
 /// }
 ///
 /// class MyHomePage extends StatelessWidget {
+///   const MyHomePage({Key? key}) : super(key: key);
+///
 ///   static Route<Object?> _dialogBuilder(BuildContext context, Object? arguments) {
 ///     return RawDialogRoute<void>(
 ///       pageBuilder: (
@@ -1967,6 +2121,7 @@ Future<T?> showGeneralDialog<T extends Object?>({
   RouteTransitionsBuilder? transitionBuilder,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
+  Offset? anchorPoint,
 }) {
   assert(pageBuilder != null);
   assert(useRootNavigator != null);
@@ -1979,6 +2134,7 @@ Future<T?> showGeneralDialog<T extends Object?>({
     transitionDuration: transitionDuration,
     transitionBuilder: transitionBuilder,
     settings: routeSettings,
+    anchorPoint: anchorPoint,
   ));
 }
 
